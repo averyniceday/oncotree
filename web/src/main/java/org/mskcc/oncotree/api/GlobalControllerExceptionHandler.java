@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.mskcc.oncotree.error.InvalidOncoTreeDataException;
+import org.mskcc.oncotree.error.OncotreeMappingsNotFound;
 import org.mskcc.oncotree.error.InvalidOncotreeMappingsParameters;
 import org.mskcc.oncotree.topbraid.TopBraidException;
 
@@ -59,6 +60,12 @@ class GlobalControllerExceptionHandler {
     @ResponseStatus(code = HttpStatus.INTERNAL_SERVER_ERROR, reason = "Your query parameters: vocabularyId, conceptId, histologyCode, siteCode are not valid. Please refer to the documentation")
     @ExceptionHandler(InvalidOncotreeMappingsParameters.class)
     public void handleInvalidOncotreeMappingsParameters() {
+        // nothing to do
+    }
+
+    @ResponseStatus(code = HttpStatus.NOT_FOUND, reason = "Your query did not return any results")
+    @ExceptionHandler(OncotreeMappingsNotFound.class)
+    public void handleOncotreeMappingsNotFound() {
         // nothing to do
     }
 

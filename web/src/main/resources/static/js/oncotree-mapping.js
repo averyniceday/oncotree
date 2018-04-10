@@ -12,9 +12,9 @@ $(function (){
         path = path.substring(0, path.lastIndexOf('/')+1); // now we have a filename that needs dropping
 		var protocol = window.location.protocol;
 		path = path == null ? '/' : path;
-		
 		var url = protocol + '//' + host + path + 'api/crosswalk?' + 'vocabularyId=' + vocabularyId + '&conceptId=' + conceptId + '&histologyCode=' + histologyCode + '&siteCode=' + siteCode;
-		
+	        console.log(url);
+	
 		   $.ajax({
 		   type:'GET',
 		   url :url,
@@ -27,7 +27,7 @@ $(function (){
 		        	$("#mappings").val("No Mapping Oncotree Concepts Found")
 		        	
 		        	$("#mapping-api").empty();
-			        $("#mapping-api").append('<blockquote><p>The API call to get this mapping programmatically</p></blockquote><p><code> ' + url + '</code></p>')
+			        $("#mapping-api").append('<blockquote><p>The API call to get this mapping programmatically</p></blockquote><p><code> ' + url + '</code></p>');
 			        
 			        $("#result").empty();
 			        $("#result").append('<blockquote><p>And the result</p></blockquote>');
@@ -45,7 +45,7 @@ $(function (){
 		        $("#mappings").val(content);
 		        
 		        $("#mapping-api").empty();
-		        $("#mapping-api").append('<blockquote><p>The API call to get this mapping programmatically</p></blockquote><p><code> ' + url + '</code></p>')
+		        $("#mapping-api").append('<blockquote><p>The API call to get this mapping programmatically</p></blockquote><p><code> ' + url + '</code></p>');
 		        
 		        $("#result").empty();
 		        $("#result").append('<blockquote><p>And the result</p></blockquote>');
@@ -54,7 +54,21 @@ $(function (){
 		        $("#resJson").html(JSON.stringify(data, undefined, 2));
 		        $("#resJson").show();
 		   },
-		   error:function(exception){console.log('Exception:'+exception);}
+		   error:function(exception){
+			$("#mappings").val("No mapping oncotree conecepts found");
+
+                        $("#mapping-api").empty();
+                        $("#mapping-api").append('<blockquote><p>The API call to get this mapping programmatically</p></blockquote><p><code> ' + url + '</code></p>');
+
+                        $("#result").empty();
+                        $("#result").append('<blockquote><p>And the result</p></blockquote>');
+
+                        $("#resJson").hide();
+                        $("#resJson").html(JSON.stringify(exception, undefined, 2));
+                        $("#resJson").show();
+
+			console.log('Exception:'+exception);
+		   }
 	}); 
 	 e.preventDefault();
 	});

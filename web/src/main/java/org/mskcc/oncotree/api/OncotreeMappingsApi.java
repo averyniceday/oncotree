@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.mskcc.oncotree.crosswalk.CrosswalkRepository;
 import org.mskcc.oncotree.crosswalk.MSKConcept;
 import org.mskcc.oncotree.error.InvalidOncotreeMappingsParameters;
+import org.mskcc.oncotree.error.OncotreeMappingsNotFound;
 import org.mskcc.oncotree.model.OncotreeMappingsResp;
 import org.mskcc.oncotree.utils.ApiUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -121,6 +122,9 @@ public class OncotreeMappingsApi {
             logger.info("Oncotree mskConcept found for concept id " + mskConcept.getOncotreeCodes().toString());
             rsp.setOncotreeCode(mskConcept.getOncotreeCodes());
         }
+	if (rsp.getOncotreeCode() == null || rsp.getOncotreeCode().isEmpty()) {
+	   throw new OncotreeMappingsNotFound("Your query parameters didn't return aything");
+	} 
         return rsp;
     }
 
