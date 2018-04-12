@@ -11,6 +11,7 @@ import java.util.*;
 import org.apache.commons.lang3.StringUtils;
 
 import org.mskcc.oncotree.error.InvalidQueryException;
+import org.mskcc.oncotree.error.TumorTypesNotFound;
 import org.mskcc.oncotree.model.*;
 import org.mskcc.oncotree.utils.CacheUtil;
 import org.mskcc.oncotree.utils.TumorTypesUtil;
@@ -38,7 +39,10 @@ public class TumorTypesApi {
 
     @ApiOperation(value = "Return all available tumor types.", notes = "", response = TumorType.class)
     @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Nested tumor types object.")})
+        @ApiResponse(code = 200, message = "Nested tumor types object."),
+        @ApiResponse(code = 404, message = "No tree found - invalid version name")
+        }
+    )
     @RequestMapping(value = "/tree",
         produces = {APPLICATION_JSON_VALUE},
         method = RequestMethod.GET)
@@ -54,7 +58,10 @@ public class TumorTypesApi {
 
     @ApiOperation(value = "Return all available tumor types as a list.", notes = "", response = TumorType.class)
     @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Tumor Types list.")})
+        @ApiResponse(code = 200, message = "Tumor Types list."),
+        @ApiResponse(code = 400, message = "Bad request - invalid version name")
+        }
+    )
     @RequestMapping(value = "",
         produces = {APPLICATION_JSON_VALUE},
         method = RequestMethod.GET)
@@ -73,7 +80,11 @@ public class TumorTypesApi {
     @ApiIgnore
     @ApiOperation(value = "Tumor Types", notes = "...", response = TumorType.class)
     @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "An array of tumor types")})
+        @ApiResponse(code = 200, message = "An array of tumor types"),
+        @ApiResponse(code = 400, message = "Bad reqest - invalid version name"),
+        @ApiResponse(code = 404, message = "Could not find tumor types with supplied query")
+        }
+    )
     @RequestMapping(value = "/search",
         produces = {APPLICATION_JSON_VALUE},
         method = RequestMethod.POST)
@@ -94,13 +105,19 @@ public class TumorTypesApi {
             matchedTumorTypes = v == null ? new ArrayList<TumorType>() : TumorTypesUtil.findTumorTypesByVersion(query.getType(), query.getQuery(), query.getExactMatch(), v, false);
             tumorTypes.add(matchedTumorTypes);
         }
+        if (tumorTypes.size() == 0) {
+            throw new TumorTypesNotFound("No tumor types were returned for this query");
+        }
         return tumorTypes;
     }
 
 
     @ApiOperation(value = "Tumor Types", notes = "", response = TumorType.class)
     @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "An array of tumor types")})
+        @ApiResponse(code = 200, message = "An array of tumor types"),
+        @ApiResponse(code = 400, message = "Bad request - invalid query type")
+        }
+    )
     @RequestMapping(value = "/search/{type}/{query}",
         produces = {APPLICATION_JSON_VALUE},
         method = RequestMethod.GET)

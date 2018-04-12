@@ -27,10 +27,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.mskcc.oncotree.error.InvalidOncoTreeDataException;
-import org.mskcc.oncotree.error.OncotreeMappingsNotFound;
-import org.mskcc.oncotree.error.UnexpectedCrosswalkResponseException;
 import org.mskcc.oncotree.error.InvalidOncotreeMappingsParameters;
 import org.mskcc.oncotree.error.InvalidQueryException;
+import org.mskcc.oncotree.error.InvalidVersionException;
+import org.mskcc.oncotree.error.OncotreeMappingsNotFound;
+import org.mskcc.oncotree.error.TumorTypesNotFound;
+import org.mskcc.oncotree.error.UnexpectedCrosswalkResponseException;
 import org.mskcc.oncotree.topbraid.TopBraidException;
 
 import org.springframework.http.HttpStatus;
@@ -70,6 +72,12 @@ class GlobalControllerExceptionHandler {
         throws IOException {
         response.sendError(HttpStatus.BAD_REQUEST.value(), e.getMessage());
     }   
+
+    @ResponseStatus(code = HttpStatus.NOT_FOUND, reason = "Your query contained an invalid version name")
+    @ExceptionHandler(InvalidVersionException.class)
+    public void handleInvalidVersionException() {
+        // nothing to do
+    }
  
     @ResponseStatus(code = HttpStatus.NOT_FOUND, reason = "Unexpected response returned from related system - this may be interpreted as having no oncotree code available for your request")
     @ExceptionHandler(UnexpectedCrosswalkResponseException.class)
@@ -77,7 +85,13 @@ class GlobalControllerExceptionHandler {
         // nothing to do
     }
 
-    @ResponseStatus(code = HttpStatus.NOT_FOUND, reason = "No oncotree codes were mapped to your query")
+    @ResponseStatus(code = HttpStatus.NOT_FOUND, reason = "No tumor types were found for supplied query")
+    @ExceptionHandler(TumorTypesNotFound.class)
+    public void handleTumorTypesNotFound() {
+        // nothing to do
+    }
+
+    @ResponseStatus(code = HttpStatus.NOT_FOUND, reason = "No oncotree codes were found for supplid query")
     @ExceptionHandler(OncotreeMappingsNotFound.class)
     public void handleOncotreeMappingsNotFound() {
         // nothing to do
