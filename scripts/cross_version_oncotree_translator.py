@@ -9,19 +9,40 @@ ONCOTREE_API_URL_BASE = "http://dashi-dev.cbio.mskcc.org:8080/manda-oncotree/api
 ONCOTREE_VERSION_ENDPOINT = ONCOTREE_API_URL_BASE + "versions"
 ONCOTREE_TUMORTYPES_ENDPOINT = ONCOTREE_API_URL_BASE + "tumorTypes"
 VERSION_API_IDENTIFIER_FIELD = "api_identifier"
+VERSION_RELEASE_DATE_FIELD = "release_date"
 METADATA_HEADER_PREFIX = "#"
+
 #--------------------------------------------------------------
-def oncotree_version_exists(oncotree_version_name):
+# hit oncotree versions API to check if oncotree version exists - error and exit if not
+def oncotree_version_exists(oncotree_version):
     response = requests.get(ONCOTREE_VERSION_ENDPOINT)
     if response.status_code != 200:
         print >> sys.stderr, "ERROR (HttpStatusCode %d): Unable to retrieve oncotree versions." % (response.status_code)
         sys.exit(1)
     all_oncotree_versions = [version[VERSION_API_IDENTIFIER_FIELD] for version in response.json()]
-    return oncotree_version_name in all_oncotree_versions
+    return oncotree_version in all_oncotree_versions
 
-#--------------------------------------------------------------
-def is_backwards_mapping(source_oncotree_version, target_oncotree_version):
-    return source_oncotree_version == "oncotree_candidate_release"
+#-------------------------------------------------------------
+# hit oncotree versions API, compares source/target oncotree version release dates
+# returns true if target version release date is less than (before) source version
+def is_mapping_backwards(source_oncotree_version, target_oncotree_version):
+    mapping_backwards_bool = False
+    mapping_direction = "forward"
+    response = requests.get(ONCOTREE_VERSION_ENDPOINT)
+    if response.status_code != 200:
+        print >> sys.stderr, "ERROR (HttpStatusCode %d): Unable to retrieve oncotree versions." % (response.status_code)
+        sys.exit(1)
+    for version in response.json():
+        if version[VERSION_API_IDENTIFIER_FIELD] == source_oncotree_version:
+            source_oncotree_version_release_date = version[VERSION_RELEASE_DATE_FIELD]
+        if version[VERSION_API_IDENTIFIER_FIELD] == target_oncotree_version:
+            target_oncotree_version_release_date = version[VERSION_RELEASE_DATE_FIELD]
+    mapping_backwards_bool = target_oncotree_version_release_date < source_oncotree_version_release_date
+    if mapping_backwards_bool:
+        mapping_direction = "backward"
+    print >> sys.stdout, "LOG: Based on provided versions (source: %s, target %s), tool will be run in %s direction" % (source_oncotree_version, target_oncotree_version, mapping_direction) 
+    return target_oncotree_version_release_date < source_oncotree_version_release_date
+
 #--------------------------------------------------------------
 def load_oncotree_version(oncotree_version_name):
     oncotree_nodes = {}
@@ -64,56 +85,47 @@ def load_input_file(input_file):
             input_file_mapped_list.append(data)
     return input_file_mapped_list, header
 #--------------------------------------------------------------
-def translate_oncotree_codes(input_file_mapped_list, source_oncotree, target_oncotree, auto_mapping_enabled):
+def translate_oncotree_codes(input_file_mapped_list, source_oncotree, target_oncotree, mapping_backwards, auto_mapping_enabled):
     for record in input_file_mapped_list:
         source_oncotree_code = record["ONCOTREE_CODE"]
-        record["ONCOTREE_CODE"] = convert_to_target_oncotree_code(source_oncotree_code, source_oncotree, target_oncotree, auto_mapping_enabled)
+        record["ONCOTREE_CODE"] = convert_to_target_oncotree_code(source_oncotree_code, source_oncotree, target_oncotree, mapping_backwards, auto_mapping_enabled)
     return input_file_mapped_list 
+
 #--------------------------------------------------------------
-def convert_to_target_oncotree_code(source_oncotree_code, source_oncotree, target_oncotree, auto_mapping_enabled):
+def convert_to_target_oncotree_code(source_oncotree_code, source_oncotree, target_oncotree, mapping_backwards, auto_mapping_enabled):
     if source_oncotree_code in ["N/A", "", "NA"]:
         return source_oncotree_code
     if source_oncotree_code not in source_oncotree:
-        #print >> sys.stderr, "ERROR: Oncotree code (%s) can not be found in source oncotree. Please verify source version." % (source_oncotree_code)
+        print >> sys.stderr, "ERROR: Oncotree code (%s) can not be found in source oncotree. Please verify source version." % (source_oncotree_code)
         return source_oncotree_code
-        #sys.exit(1)
+        sys.exit(1)
     source_oncotree_node = source_oncotree[source_oncotree_code]
-    is_backwards_mapping_bool = True
     # get a set of possible codes that source code has been mapped to
-    possible_target_oncotree_nodes = get_possible_target_oncotree_nodes(source_oncotree_node, source_oncotree, target_oncotree, is_backwards_mapping_bool)
+    possible_target_oncotree_codes = get_possible_target_oncotree_nodes(source_oncotree_node, target_oncotree, is_backwards_mapping_bool)
     # resolve set of codes (cannot use possible_target_oncotree_nodes anymore)
     target_oncotree_code = resolve_possible_target_oncotree_codes(source_oncotree_code, possible_target_oncotree_nodes, source_oncotree, target_oncotree, auto_mapping_enabled)
     return target_oncotree_code
-#--------------------------------------------------------------
-def resolve_possible_target_oncotree_codes(source_oncotree_code, possible_target_oncotree_nodes, source_oncotree, target_oncotree, auto_mapping_enabled):
-    if len(possible_target_oncotree_nodes) == 1:
-        return possible_target_oncotree_nodes.pop()
-    if not auto_mapping_enabled:
-        if len(possible_target_oncotree_nodes) == 0:
-            return "Oncotree Code (%s) needs to be manually mapped" % source_oncotree_code
-        return "Choose from: " + ", ".join(possible_target_oncotree_codes)
-    return "Complex algorithm incoming"
 
 #--------------------------------------------------------------
-def get_possible_target_oncotree_nodes(source_oncotree_node, source_oncotree, target_oncotree, is_backwards_mapping_bool):
+# given a single oncotree node and mapping direction - return a set with possible mapped codes
+def get_possible_target_oncotree_nodes(source_oncotree_node, target_oncotree, mapping_backwards):
     possible_target_oncotree_codes = set()
     source_oncotree_code = source_oncotree_node["code"]
-    if is_backwards_mapping_bool:        
-        # Backwards mapping - code in history is in the target version (Same URI - different name)
-        for historical_oncotree_code in source_oncotree_node["history"]:
-            if historical_oncotree_code in target_oncotree:
-                possible_target_oncotree_codes.add(historical_oncotree_code)
+    if mapping_backwards:        
+        # Backwards mapping
+        # codes in history is in the target version (Same URI - different name)
+        possible_target_oncotree_codes.update(get_past_oncotree_codes_for_related_codes(source_oncotree_node, target_oncotree, "history"))
         if not possible_target_oncotree_codes: # history overrides current code when history is present (e.g PTCLNOS)
             if source_oncotree_code in target_oncotree:
                 possible_target_oncotree_codes.add(source_oncotree_code)
-        for precursor_code in source_oncotree_node["precursors"]:
-            if precursor_code in target_oncotree:
-                possible_target_oncotree_codes.add(precursor_code)
+        # codes in precusors is in the target version
+        possible_target_oncotree_codes.update(get_past_oncotree_codes_for_related_codes(source_oncotree_node, target_oncotree, "precursors"))
+        # skip checking codes in revocations - invalid codes which should not be considered 
         return possible_target_oncotree_codes
     else:
         # Forwards mapping
         # codes where source code is in history (this should at most be 1 node - because its the same URI)
-        future_codes = find_oncotree_codes_where_im_history(source_oncotree_code, target_oncotree)
+        future_codes = get_future_related_oncotree_codes_for_source_code(source_oncotree_code, target_oncotree, "history")
         if len(future_codes) > 1:
             print >> sys.stderr, "ERROR: Future oncotree has multiple codes with code %s in history" % (source_oncotree_code)
             sys.exit(1)
@@ -121,30 +133,46 @@ def get_possible_target_oncotree_nodes(source_oncotree_node, source_oncotree, ta
             possible_target_oncotree_codes.update(future_codes)
             return possible_target_oncotree_codes
         # codes where source code is in precursor (this can be more than 1, but can not intersect with revocations)
-        if source_oncotree_code == "BLL":
-            print ','.join(possible_target_oncotree_codes) + "\n\n\n"
-        possible_target_oncotree_codes.update(find_oncotree_codes_where_im_precursor(source_oncotree_code, target_oncotree))
-        if source_oncotree_code == "BLL":
-            print ','.join(possible_target_oncotree_codes) + "\n\n\n"
+        possible_target_oncotree_codes.update(get_future_related_oncotree_codes_for_source_code(source_oncotree_code, target_oncotree, "precursor"))
         if len(possible_target_oncotree_codes) > 0:
             return possible_target_oncotree_codes
         # codes where source code is in revocations (this can be more than 1) 
-        possible_target_oncotree_codes.update(find_oncotree_codes_where_im_revocation(source_oncotree_code, target_oncotree))
+        possible_target_oncotree_codes.update(get_future_related_oncotree_codes_for_source_code(source_oncotree_code, target_oncotree, "revocations"))
         if len(possible_target_oncotree_codes) > 0:
             return possible_target_oncotree_codes
+        # at this point, no matches - check if source code exists in future oncotree
         if source_oncotree_code in target_oncotree:
             possible_target_oncotree_codes.add(source_oncotree_code)
         return possible_target_oncotree_codes
-             
-def find_oncotree_codes_where_im_precursor(source_oncotree_code, target_oncotree):
-    return [target_oncotree_code for target_oncotree_code, target_oncotree_node in target_oncotree.items() if source_oncotree_code in target_oncotree_node["precursors"]]
-    
-def find_oncotree_codes_where_im_history(source_oncotree_code, target_oncotree):
-    return [target_oncotree_code for target_oncotree_code, target_oncotree_node in target_oncotree.items() if source_oncotree_code in target_oncotree_node["history"]]
 
-def find_oncotree_codes_where_im_revocation(source_oncotree_code, target_oncotree):
-    return [target_oncotree_code for target_oncotree_code, target_oncotree_node in target_oncotree.items() if source_oncotree_code in target_oncotree_node["revocations"]]
+#--------------------------------------------------------------
+# exclusively for mapping in backward direction
+# looking through 'related nodes (history, precursors)', return if found in target (past) oncotree
+# i.e SLLCLL (SLL precusor, CLL precursor) -> SLL, CLL
+def get_past_oncotree_codes_for_related_codes(source_oncotree_node, target_oncotree, field):
+    return [past_oncotree_code for past_oncotree_code in source_oncotree_node[field] if past_oncotree_code in target_oncotree]
 
+#--------------------------------------------------------------
+# exclusively for mapping in forward direction
+# returns codes where source code is related in target (future) oncotree
+# i.e ALL -> BLL (ALL revocation), TLL (ALL revocation)
+def get_future_related_oncotree_codes_for_source_code(source_oncotree_code, target_oncotree, field):
+    return [future_oncotree_code for future_oncotree_code, future_oncotree_node in target_oncotree.items() if source_oncotree_code in future_oncotree_node[field]]
+
+#--------------------------------------------------------------
+# return a single string given a set of possible target oncotree codes
+# return string format/content dependent on whether auto mapping is enabled (single code, list of codes, etc.)
+# resolves issues such as no direct mappings and multiple possible mappings
+def resolve_possible_target_oncotree_codes(source_oncotree_code, possible_target_oncotree_codes, source_oncotree, target_oncotree, auto_mapping_enabled):
+    if len(possible_target_oncotree_codes) == 1:
+        return possible_target_oncotree_codes.pop()
+    if not auto_mapping_enabled:
+        if len(possible_target_oncotree_codes) == 0:
+            return "Oncotree Code (%s) needs to be manually mapped" % source_oncotree_code
+        return "Choose from: " + ", ".join(possible_target_oncotree_codes)
+    return "Complex algorithm incoming"
+
+#--------------------------------------------------------------
 def write_to_output_file(translated_input_file_mapped_list, output_file, header):
     with open(output_file, "w") as f:
         f.write('\t'.join(header) + "\n")
@@ -178,10 +206,11 @@ def main():
         print >> sys.stderr, "ERROR: Target version (%s) is not a valid oncotree version" % (target_version) 
         sys.exit(1)
 
+    mapping_backwards = is_mapping_backwards(source_version, target_version)
     input_file_mapped_list, header = load_input_file(input_file)
     source_oncotree = load_oncotree_version(source_version)
     target_oncotree = load_oncotree_version(target_version)
-    translated_input_file_mapped_list = translate_oncotree_codes(input_file_mapped_list, source_oncotree, target_oncotree, auto_mapping_enabled)
+    translated_input_file_mapped_list = translate_oncotree_codes(input_file_mapped_list, source_oncotree, target_oncotree, mapping_backwards, auto_mapping_enabled)
     write_to_output_file(translated_input_file_mapped_list, output_file, header)
 
 if __name__ == '__main__':
