@@ -53,7 +53,7 @@ Ambiguous direct mappings are also checked for addition of more granular nodes; 
 ### 3. No Direct Mappings   
  No direct mappings occur when the source oncotree code is unrelated to any oncotree code in  the target version. One such possibility is mapping a newly introduced oncotree code backwards in time. In this case, the tool finds the closest set of **neighbors** (e.g parents and children) which are mappable in the target version. The `ONCOTREE_SUGGESTIONS` column returns the set with the keyword **Neighbors** as follows:  
  
- > 'Source Code' -> **Neighbors** {'Code 1', 'Code 2', 'Code 3', ..} &emsp; e.g. _UPA -> Neighbors {BLADDER}_
+ > 'Source Code' -> **Neighbors** {'Code 1', 'Code 2', 'Code 3', ...} &emsp; e.g. _UPA -> Neighbors {BLADDER}_
  
  **Example: Schema describing a case where new OncoTree node UPA cannot be directly mapped backwards to a node.**
 
@@ -67,7 +67,7 @@ Ambiguous direct mappings are also checked for addition of more granular nodes; 
 ### 4. More Granular Nodes Introduced
 In certain cases, the target version can also introduce nodes with more specfic descriptions. When this occurs, the tool will add the string `more granular choices introduced` to the existing text in the `ONCOTREE_SUGGESTIONS` column as follows:  
   
-> _'Source Code' -> {'Code 1', ..}, **more granular choices introduced**_  
+> _'Source Code' -> {'Code 1', ...}, **more granular choices introduced**_  
 > e.g. _TALL -> {TLL}, more granular choices introduced_ 
 
  **Example: Schema describing a case where OncoTree node TALL is mapped to a node with more granular children**  
@@ -102,31 +102,31 @@ The tool will output two files: `data_clinical_sample_test_remapped.txt` and `da
 #### Step 4
 Examine `data_clinical_sample_test_remapped.txt`, file contents should be as follows:  
 
-|PATIENT_ID|SAMPLE_ID|AGE_AT_SEQ_REPORT|ONCOTREE_CODE|ONCOTREE_CODE_OPTIONS|..|
+|PATIENT_ID|SAMPLE_ID|AGE_AT_SEQ_REPORT|ONCOTREE_CODE|ONCOTREE_CODE_OPTIONS|...|
 |-------|-------|-------|-------|-------|-------|
-|P1|S1|41||ALL -> {BLL,TLL}, more granular choices introduced|..|
-|P2|S2|60||BALL -> {BLL}, more granular choices introduced|..|
-|P3|S3|<18||TALL -> {TLL}, more granular choices introduced|..|
-|P4|S4|71|PTCL||..|
-|P5|S5|64|PTCL||..| 
-|P6|S6|36||CHL -> {CHL}, more granular choices introduced|..|
-|P7|S7|63||SpCC -> ???, Oncotee code not in source oncotree version|..|
-|P8|S8|63||MCL -> {MCL}, more granular choices introduced|..|
-|P9|S9|73||HGNEE -> ???, Oncotee code not in source oncotree version|..|
-|P10|S10|52||ONCOTREE_CODE column blank : use a valid oncotree code or "NA"|..| 
-|P11|S11|77|NA||..|   
-|P12|S12|87||TNKL -> {MTNN}, more granular choices introduced|..|
-|P13|S13|79||HIST -> {HDCN}, more granular choices introduced|..| 
-|P14|S14|53|CLLSLL||..|
-|P15|S15|69|CLLSLL||..|
-|P16|S16|65||LEUK -> {MNM}, more granular choices introduced|..|
-|P17|S17|66|MYCF||..|
-|P18|S18|66|RBL||..|                                              
+|P1|S1|41||ALL -> {BLL,TLL}, more granular choices introduced|...|
+|P2|S2|60||BALL -> {BLL}, more granular choices introduced|...|
+|P3|S3|<18||TALL -> {TLL}, more granular choices introduced|...|
+|P4|S4|71|PTCL||...|
+|P5|S5|64|PTCL||...| 
+|P6|S6|36||CHL -> {CHL}, more granular choices introduced|...|
+|P7|S7|63||SpCC -> ???, Oncotee code not in source oncotree version|...|
+|P8|S8|63||MCL -> {MCL}, more granular choices introduced|...|
+|P9|S9|73||HGNEE -> ???, Oncotee code not in source oncotree version|...|
+|P10|S10|52||ONCOTREE_CODE column blank : use a valid oncotree code or "NA"|...| 
+|P11|S11|77|NA||...|   
+|P12|S12|87||TNKL -> {MTNN}, more granular choices introduced|...|
+|P13|S13|79||HIST -> {HDCN}, more granular choices introduced|...| 
+|P14|S14|53|CLLSLL||...|
+|P15|S15|69|CLLSLL||...|
+|P16|S16|65||LEUK -> {MNM}, more granular choices introduced|...|
+|P17|S17|66|MYCF||...|
+|P18|S18|66|RBL||...|                                              
  
 #### Step 5
 Using values in the `ONCOTREE_CODE_OPTIONS` as a guide, manually select and place an OncoTree Code in the `ONCOTREE_CODE` column. For additional information, refer to the summary file `data_clinical_sample_remapped_summary.html`. Repeat for all rows in the output file. Several examples are shown below.  
 
- ###### Sample 1  
+###### Sample 1  
 
 |SAMPLE_ID|ONCOTREE_CODE  |ONCOTREE_CODE_OPTIONS|
 |:--------|:-------------:|:----------------------:|
@@ -166,25 +166,25 @@ Source OncoTree code `HGNEE` was not found in the source OncoTree version and th
 #### Step 6
 After filling in the `ONCOTREE_CODE` column, use an editor (e.g. Microsoft Excel, vim, etc.) to trim off the `ONCOTREE_CODE_OPTIONS` column. The resulting file will be a new `data_clinical_sample.txt` file with all codes mapped to the target version. Final output is shown below: 
 
-|PATIENT_ID|SAMPLE_ID|AGE_AT_SEQ_REPORT|ONCOTREE_CODE|..| 
+|PATIENT_ID|SAMPLE_ID|AGE_AT_SEQ_REPORT|ONCOTREE_CODE|...| 
 |-------|-------|-------|-------|-------|
-|P1|S1|41|BLL|..|
-|P2|S2|60|BLL|..|
-|P3|S3|<18|TLL|..|
-|P4|S4|71|PTCL|..|
-|P5|S5|64|PTCL|..|
-|P6|S6|36|CHL|..|
-|P7|S7|63|SPCC|..|
-|P8|S8|63|MCL|..|
-|P10|S10|52|NA|..|
-|P11|S11|77|NA|..|   
-|P12|S12|87|MTNN|..|
-|P13|S13|79|HDCN|..| 
-|P14|S14|53|CLLSLL|..|
-|P15|S15|69|CLLSLL|..|
-|P16|S16|65|MNM|..|
-|P17|S17|66|MYCF|..|
-|P18|S18|66|RBL|..| 
+|P1|S1|41|BLL|...|
+|P2|S2|60|BLL|...|
+|P3|S3|<18|TLL|...|
+|P4|S4|71|PTCL|...|
+|P5|S5|64|PTCL|...|
+|P6|S6|36|CHL|...|
+|P7|S7|63|SPCC|...|
+|P8|S8|63|MCL|...|
+|P10|S10|52|NA|...|
+|P11|S11|77|NA|...|   
+|P12|S12|87|MTNN|...|
+|P13|S13|79|HDCN|...| 
+|P14|S14|53|CLLSLL|...|
+|P15|S15|69|CLLSLL|...|
+|P16|S16|65|MNM|...|
+|P17|S17|66|MYCF|...|
+|P18|S18|66|RBL|...| 
 
 ### [Additional Resources](#additional-resources)
 - [sample input file](https://raw.githubusercontent.com/averyniceday/oncotree/doc-expansion/docs/data_clinical_sample_test.txt)
