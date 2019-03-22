@@ -1,6 +1,6 @@
 # OncoTree to OncoTree Mapping Tool
 
-The OncoTree Mapping tool was developed to facilitate the mapping of OncoTree codes between different OncoTree release versions. Instructions for running the tool can be found below in the [Running the tool](#running-the-tool) section. A detailed walkthrough can be found in the [Tutorial](#tutorial) section. Additional resources such as sample input, output, and mapping summary files can be found in the [Additional Resources](#additional-resources) sections.asfasdfasf
+The OncoTree Mapping tool was developed to facilitate the mapping of OncoTree codes between different OncoTree release versions. Instructions for running the tool can be found below in the [Running the tool](#running-the-tool) section. A detailed walkthrough can be found in the [Tutorial](#tutorial) section. Additional resources such as sample input, output, and mapping summary files can be found in the [Additional Resources](#additional-resources) sections.
 
 ## [Setting up and downloading the tool](#setting-up-and-downloading-the-tool)
 
@@ -31,7 +31,7 @@ The list of OncoTree versions available are viewable [here](http://oncotree.mskc
 
  The OncoTree Mapper Tool will automatically replace the value in the `ONCOTREE_CODE` column with the mapped code if available. The tool will also add a new column called `ONCOTREE_SUGGESTIONS` containing suggestions for OncoTree codes if one or more nodes could not be direclty mapped. The `ONCOTREE_SUGGESTIONS` column formats its suggestions differently depending on the mapping results. Possible suggestion formats and corresponding examples are shown below.
 
- ### 1. Unambiguous Direct Mappings
+### 1. Unambiguous Direct Mappings 
  Unambiguous direct mappings occur when an oncotree code maps directly to a single code in the target version. In this case, the `ONCOTREE_SUGGESTIONS` column will be left blank, and the mapped code will be automatically placed in the `ONCOTREE_CODE` column. Unambiguous direct mappings are checked for addition of more granular nodes; to see how this may affect the `ONCOTREE_SUGGESTIONS` column formatting, please refer to the section on [More Granular Nodes Introduced](#4-more-granular-nodes-introduced).
 
 ### 2. Ambiguous Direct Mappings 
