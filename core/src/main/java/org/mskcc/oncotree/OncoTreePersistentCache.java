@@ -139,10 +139,16 @@ public class OncoTreePersistentCache {
         cacheManager.close();
     }
 
-    public void backupMSKConceptPersistentCache(MSKConcept mskConcept, String oncoTreeCode) throws Exception {
+    // TODO: try/catch/finally - close cacheManager
+    public synchronized void backupMSKConceptPersistentCache(MSKConcept mskConcept, String oncoTreeCode) throws Exception {
         CacheManager cacheManager = getCacheManager("ehcache_backup.xml");
-        cacheManager.getCache(MSKCONCEPT_CACHE).put(oncoTreeCode, mskConcept);
+        logger.error("Attempting to cache for code: " + oncoTreeCode + " for concept " + mskConcept); 
+        Cache cache = cacheManager.getCache(MSKCONCEPT_CACHE);
+        logger.error("Cache is: " + cache);
+        logger.error("Cache is closed: " + cache.isClosed());
+        cache.put(oncoTreeCode, mskConcept);
         cacheManager.close();
+        logger.error("Cache is closed: " + cache.isClosed() + ", exiting OncoTreePersistentCache...");
     }
 }
 

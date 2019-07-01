@@ -65,25 +65,15 @@ public class CrosswalkRepository {
             return response.getBody();
         } catch (HttpStatusCodeException e) {
             logger.error("queryCVS() -- caught HttpStatusCodeException: " + e);
-            String errorString = "URI: " + crosswalkURL + "\n" +
-                "vocabularyId: " + vocabularyId + "\n" +
-                "conceptId: " + conceptId + "\n" +
-                "histologyCode: " + histologyCode + "\n" +
-                "siteCode: " + siteCode + "\n";
             if (e.getStatusCode().is4xxClientError()) {
-                throw new CrosswalkConceptNotFoundException("4xx Error while getting data from CVS Service with: \n" + errorString, e);
+                throw new CrosswalkConceptNotFoundException("4xx Error while getting data from CVS Service" , e);
             } else if (e.getStatusCode().is5xxServerError()) {
                 throw new CrosswalkServiceUnavailableException("5xx Error while getting data from CVS", e);
             }
-            throw new UnexpectedCrosswalkResponseException("Exception while getting data from CVS Service with: \n" + errorString, e);
+            throw new UnexpectedCrosswalkResponseException("Exception while getting data from CVS Service", e);
         } catch (RestClientException e) {
             logger.error("queryCVS() -- caught RestClientErrorException: " + e);
-            String errorString = "URI: " + crosswalkURL + "\n" +
-                "vocabularyId: " + vocabularyId + "\n" +
-                "conceptId: " + conceptId + "\n" +
-                "histologyCode: " + histologyCode + "\n" +
-                "siteCode: " + siteCode + "\n";
-            throw new UnexpectedCrosswalkResponseException("RestClientException while getting data from CVS Service" + errorString, e);
+            throw new UnexpectedCrosswalkResponseException("RestClientException while getting data from CVS Service", e);
         }
     }
 }
